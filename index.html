@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <title>emotions-webapp</title>
+
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <py-config>
+      packages = [ "matplotlib", "numpy"] 
+      [[fetch]]
+      files = ["/request.py"]
+      packages = [ "matplotlib", "numpy"] 
+    </py-config>
+
+  </head>
+  <style>
+    #div1{
+    display: flex;
+    justify-content: center;
+  }
+  </style>
+  <body>
+    <div id="div1">
+      <input type="text" id = "input_filed">
+      <button py-click="display_to_div()" id ="submit_button" type = "submit">Submit</button>
+      
+    </div>
+    <div id ="output"></div>
+    <py-script>
+        
+        import asyncio
+        
+        import json
+        
+        import matplotlib.pyplot as plt
+        from request import request  # import our request function.
+
+
+        
+        async def display_to_div():
+            async def main():
+                
+                #async def display_to_div():
+                text = Element('input_filed').element.value 
+                API_TOKEN = "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"
+                headers = {"Authorization": f"Bearer {API_TOKEN}"}
+                API_URL = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base"
+        
+                data = json.dumps({"inputs": text})
+
+                # POST
+                new_post = await request(API_URL, body=data, method="POST", headers=headers)
+                str = json.dumps(await new_post.json())
+                return str
+                
+
+            res = await asyncio.ensure_future(main())
+            
+            new_res = res[2:-2]
+            res = new_res[1:-1]
+            
+            res_list = res.split(r'}, {')
+            emotions = dict([])
+            for el in res_list:
+              el_list = el.split(",")
+
+              first_split = el_list[0].split(':')
+              label = first_split[1][2:-1]
+              second_split = el_list[1].split(':')
+              score = float(second_split[1])
+
+              emotions[label] = score
+              print("-"+el)
+            
+            
+
+            #Element('output').element.innerText = emotions
+            
+            def plot(data):
+              plt.rcParams["figure.figsize"] = (22,20)
+              fig, ax = plt.subplots()
+              keys = list(data.keys())
+              values = list(data.values())
+              plt.plot(values, labels=keys)
+              
+              display(fig, target="graph-area", append=False)
+
+            plot(emotions)
+            
+               
+    </py-script>
+
+    <div id="graph-area"></div>
+  </body>
+</html>
