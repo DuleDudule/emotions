@@ -14,7 +14,7 @@
       packages = [ "matplotlib", "numpy"] 
       [[fetch]]
       files = ["/request.py"]
-      packages = [ "matplotlib", "numpy"] 
+      
     </py-config>
 
   </head>
@@ -22,6 +22,10 @@
     #div1{
     display: flex;
     justify-content: center;
+  }
+    #graph-area{
+      display: flex;
+      justify-content: center;
   }
   </style>
   <body>
@@ -75,18 +79,20 @@
               score = float(second_split[1])
 
               emotions[label] = score
-              print("-"+el)
+              #print("-"+el)
             
             
 
             #Element('output').element.innerText = emotions
             
             def plot(data):
-              plt.rcParams["figure.figsize"] = (22,20)
+              plt.rcParams["figure.figsize"] = (5,5)
               fig, ax = plt.subplots()
               keys = list(data.keys())
               values = list(data.values())
-              plt.plot(values, labels=keys)
+              key_colors = {'joy':'yellow','sadness':'grey','anger':'black','surprise':'blue','fear':'red','neutral':'orange','disgust':'green'}
+              colors = [key_colors[xval] for xval in keys]
+              plt.bar(keys,values,color= colors)
               
               display(fig, target="graph-area", append=False)
 
