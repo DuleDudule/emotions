@@ -6,7 +6,7 @@
 
     <title>emotions-webapp</title>
 
-    <link rel="icon" type="image/png" href="favicon.png" />
+    
     <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
     
     <script defer src="https://pyscript.net/latest/pyscript.js"></script>
@@ -27,30 +27,38 @@
       display: flex;
       justify-content: center;
   }
+    #dugmici{
+      display: flex;
+      justify-content: center;
+    }
   </style>
   <body>
     <div id="div1">
-      <input type="text" id = "input_filed">
+      <input type="text" id = "input_field" >
       <button py-click="display_to_div()" id ="submit_button" type = "submit">Submit</button>
       
     </div>
+
+    <script>
+      document.getElementById("input_field").value = " ";
+    </script>
     <div id ="output"></div>
     <py-script>
         
         import asyncio
-        
+        import js
         import json
         
         import matplotlib.pyplot as plt
         from request import request  # import our request function.
 
-
+        
         
         async def display_to_div():
             async def main():
                 
                 #async def display_to_div():
-                text = Element('input_filed').element.value 
+                text = Element('input_field').element.value 
                 API_TOKEN = "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"
                 headers = {"Authorization": f"Bearer {API_TOKEN}"}
                 API_URL = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base"
@@ -86,7 +94,7 @@
             #Element('output').element.innerText = emotions
             
             def plot(data):
-              plt.rcParams["figure.figsize"] = (5,5)
+              plt.rcParams["figure.figsize"] = (6,5)
               fig, ax = plt.subplots()
               keys = list(data.keys())
               values = list(data.values())
@@ -100,7 +108,85 @@
             
                
     </py-script>
+    <br>
+    <div id ="dugmici">
+      <button  onclick="startRecording()">Start Recording</button>
+      <button  onclick="stopRecording()">Stop Recording</button>
+      <button  onclick="playRecording()">Play Recording</button>
+      <button  onclick="postJSON()">Send to api</button>
+    </div>
 
+    <script>
+      var recorder;
+      var audioChunks = [];
+      var audioBlob;
+      var audioUrl;
+      var audio;
+      var transcribed_text
+      function startRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(function(stream) {
+            recorder = new MediaRecorder(stream);
+            recorder.start();
+  
+            recorder.addEventListener('dataavailable', function(event) {
+              audioChunks.push(event.data);
+            });
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
+      }
+  
+      function stopRecording() {
+        if (recorder) {
+          recorder.stop();
+        }   
+
+        recorder.addEventListener('stop', function() {
+          if (audioChunks.length > 0) {
+            audioBlob = new Blob(audioChunks);
+            audioUrl = URL.createObjectURL(audioBlob);
+            audio = new Audio(audioUrl);
+            document.body.appendChild(audio);
+      
+          }
+        });
+      }
+  
+      function playRecording() {
+			if (audioUrl) {
+				audio = new Audio(audioUrl);
+				audio.play();
+			}
+
+
+		}
+
+    async function postJSON() {
+      try {
+        const response = await fetch("https://api-inference.huggingface.co/models/jonatasgrosman/wav2vec2-large-xlsr-53-english", {
+          method: "POST", // or 'PUT'
+          headers: { 'Content-Type': 'audio/webm',
+                      'Authorization': 'Bearer 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' },
+          //body: JSON.stringify({'inputs':audio}) // TODO
+          body : audioBlob
+        });
+
+        const result = await response.json();
+        console.log("Success:", result);
+        transcribed_text_json = JSON.stringify(result);
+        transcribed_text = transcribed_text_json.substring(9,transcribed_text_json.length - 2)
+        document.getElementById("input_field").value = transcribed_text;
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+    
+    </script>
+    <py-script>
+
+    </py-script>
     <div id="graph-area"></div>
   </body>
 </html>
