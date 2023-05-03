@@ -22,6 +22,16 @@
     #div1{
     display: flex;
     justify-content: center;
+    
+  }
+    #div2{
+    display: flex;
+    justify-content: center;
+    
+  }
+    #images{
+      display: flex;
+      justify-content: center;
   }
     #graph-area{
       display: flex;
@@ -30,93 +40,192 @@
     #dugmici{
       display: flex;
       justify-content: center;
-    }
+  }
+    #image-area{
+      display: flex;
+      justify-content: center;
+      width:400px;
+      height:400px;
+      padding:5%;
+  }
+  #title{
+      display: flex;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+  }
+
+  .myButton {
+    background-color:#44c767;
+    border-radius:28px;
+    border:1px solid #18ab29;
+    display:inline-block;
+    cursor:pointer;
+    color:#ffffff;
+    font-family:Arial;
+    font-size:15px;
+    padding:8px 25px;
+    text-decoration:none;
+    text-shadow:0px 1px 0px #2f6627;
+  }
+  .myButton:hover {
+    background-color:#5cbf2a;
+  }
+  #recordingProgress{
+    display: flex;
+    justify-content: center;
+    color:#18ab29;
+  }
   </style>
   <body>
-    <div id="div1">
-      <input type="text" id = "input_field" >
-      <button py-click="display_to_div()" id ="submit_button" type = "submit">Submit</button>
-      
+    <h2 id="title">Write a prompt or record it as audio</h2>
+    <div id="div2">
+      <input type="text" id = "input_field" size = "50">
     </div>
 
+    <h3 id = "recordingProgress"></h3>
+
+    <div id ="dugmici">
+      <button  onclick="startRecording()" class ="myButton">Start Recording</button>
+      <button  onclick="stopRecording()" class ="myButton">Stop Recording</button>
+      <button  onclick="playRecording()" class ="myButton">Play Recording</button>
+      <button  onclick="postJSON()" class ="myButton">Transcribe audio</button>
+    </div>
+
+
+
+
     <script>
-      document.getElementById("input_field").value = " ";
+      document.getElementById("input_field").value = "";
     </script>
-    <div id ="output"></div>
+
+
+
+    
+    <br>
+
+    <div id="div1">
+      <button py-click="display_to_div()" class ="myButton" type = "submit">Detect emotions</button>
+      <button py-click="generateImage()" class ="myButton" type = "submit">Submit prompt</button>
+      <button py-click="generateImageEmotion()" class ="myButton" type = "submit">Submit emotion</button>
+    </div>
+
     <py-script>
         
-        import asyncio
-        import js
-        import json
+      import asyncio
+      import js
+      import json
+      import io
+      from PIL import Image
+      import matplotlib.pyplot as plt
+      from request import request  # import our request function.
+
+      
+      emotions = dict([])
+
+      async def display_to_div():
+        def plot(data):
+          plt.rcParams["figure.figsize"] = (6,5)
+          fig, ax = plt.subplots()
+          keys = list(data.keys())
+          values = list(data.values())
+          key_colors = {'joy':'yellow','sadness':'grey','anger':'black','surprise':'blue','fear':'red','neutral':'orange','disgust':'green'}
+          colors = [key_colors[xval] for xval in keys]
+          plt.bar(keys,values,color= colors)
+          
+          display(fig, target="graph-area", append=False)
+
+        async def main():
+          text = Element('input_field').element.value 
+          API_TOKEN = "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"
+          headers = {"Authorization": f"Bearer {API_TOKEN}"}
+          API_URL = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base"
+  
+          data = json.dumps({"inputs": text})
+
+          # POST
+          new_post = await request(API_URL, body=data, method="POST", headers=headers)
+          str = json.dumps(await new_post.json())
+          return str
+            
+
         
-        import matplotlib.pyplot as plt
-        from request import request  # import our request function.
-
+        text = Element('input_field').element.value
         
+
+        if not text:
+          Element('recordingProgress').element.innerText = "Write a prompt or record audio first"
+        else:
+          res = await asyncio.ensure_future(main())
+          new_res = res[2:-2]
+          res = new_res[1:-1]
+          
+          res_list = res.split(r'}, {')
+          
+          for el in res_list:
+            el_list = el.split(",")
+
+            first_split = el_list[0].split(':')
+            label = first_split[1][2:-1]
+            second_split = el_list[1].split(':')
+            score = float(second_split[1])
+
+            emotions[label] = score
+          
+          plot(emotions)
+  
         
-        async def display_to_div():
-            async def main():
-                
-                #async def display_to_div():
-                text = Element('input_field').element.value 
-                API_TOKEN = "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"
-                headers = {"Authorization": f"Bearer {API_TOKEN}"}
-                API_URL = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base"
-        
-                data = json.dumps({"inputs": text})
+      async def generateImage():
 
-                # POST
-                new_post = await request(API_URL, body=data, method="POST", headers=headers)
-                str = json.dumps(await new_post.json())
-                return str
-                
 
-            res = await asyncio.ensure_future(main())
-            
-            new_res = res[2:-2]
-            res = new_res[1:-1]
-            
-            res_list = res.split(r'}, {')
-            emotions = dict([])
-            for el in res_list:
-              el_list = el.split(",")
 
-              first_split = el_list[0].split(':')
-              label = first_split[1][2:-1]
-              second_split = el_list[1].split(':')
-              score = float(second_split[1])
+        async def sendRequest():
+          text = Element('input_field').element.value 
+          API_TOKEN = "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"
+          headers = {"Authorization": f"Bearer {API_TOKEN}"}
+          API_URL = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
+          data = json.dumps({"inputs": text})
+          new_post = await request(API_URL, body=data, method="POST", headers=headers)
+          return new_post
 
-              emotions[label] = score
-              #print("-"+el)
-            
-            
+        text = Element('input_field').element.value
+        if not text:
+          Element('recordingProgress').element.innerText = "Write a prompt or record audio first"
+        else:
+          res = await asyncio.ensure_future(sendRequest())
+          image = Image.open(io.BytesIO(await res.bytes()))
+          display(image, target="image-area", append=False)
 
-            #Element('output').element.innerText = emotions
-            
-            def plot(data):
-              plt.rcParams["figure.figsize"] = (6,5)
-              fig, ax = plt.subplots()
-              keys = list(data.keys())
-              values = list(data.values())
-              key_colors = {'joy':'yellow','sadness':'grey','anger':'black','surprise':'blue','fear':'red','neutral':'orange','disgust':'green'}
-              colors = [key_colors[xval] for xval in keys]
-              plt.bar(keys,values,color= colors)
-              
-              display(fig, target="graph-area", append=False)
 
-            plot(emotions)
-            
-               
+      async def generateImageEmotion():
+
+        async def sendRequestEmotion(emotion):
+          
+          API_TOKEN = "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"
+          headers = {"Authorization": f"Bearer {API_TOKEN}"}
+          API_URL = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
+          #data = json.dumps({"inputs": f"abstract image protraying {emotion}"})
+          data = json.dumps({"inputs": f"{emotion}"})
+          new_post = await request(API_URL, body=data, method="POST", headers=headers)
+          return new_post
+
+
+        if not emotions:
+          Element('recordingProgress').element.innerText = "Detect emotions in a prompt first"
+        else:
+          max_value = list(emotions.values())
+          max_key= list(emotions.keys())
+          emotion = max_key[max_value.index(max(max_value))]
+          
+          #print(emotion)
+          res = await asyncio.ensure_future(sendRequestEmotion(emotion))
+          image = Image.open(io.BytesIO(await res.bytes()))
+          display(image, target="image-area", append=False)
+             
     </py-script>
-    <br>
-    <div id ="dugmici">
-      <button  onclick="startRecording()">Start Recording</button>
-      <button  onclick="stopRecording()">Stop Recording</button>
-      <button  onclick="playRecording()">Play Recording</button>
-      <button  onclick="postJSON()">Send to api</button>
-    </div>
+
 
     <script>
+      let audioRecorded = false;
       var recorder;
       var audioChunks = [];
       var audioBlob;
@@ -124,47 +233,73 @@
       var audio;
       var transcribed_text
       function startRecording() {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(function(stream) {
-            recorder = new MediaRecorder(stream);
-            recorder.start();
-  
-            recorder.addEventListener('dataavailable', function(event) {
-              audioChunks.push(event.data);
+        if(audioRecorded == false){
+          audioRecorded = true;
+          document.getElementById("recordingProgress").innerText = "Recording in progress";
+          document.getElementById("recordingProgress").style.color = "#18ab29";
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+              recorder = new MediaRecorder(stream);
+              recorder.start();
+    
+              recorder.addEventListener('dataavailable', function(event) {
+                audioChunks.push(event.data);
+              });
+            })
+            .catch(function(error) {
+              console.log(error);
             });
-          })
-          .catch(function(error) {
-            console.log(error);
-          });
+        }else{
+          document.getElementById("recordingProgress").innerText = "Audio already recorded, refresh the page";
+          document.getElementById("recordingProgress").style.color = "#ff0000";
+        }
+
       }
   
       function stopRecording() {
-        if (recorder) {
-          recorder.stop();
-        }   
+        if(audioRecorded){
+          document.getElementById("recordingProgress").innerText = "Recording finished";
+          document.getElementById("recordingProgress").style.color = "#ff0000";
+          if (recorder) {
+            recorder.stop();
+          }   
 
-        recorder.addEventListener('stop', function() {
-          if (audioChunks.length > 0) {
-            audioBlob = new Blob(audioChunks);
-            audioUrl = URL.createObjectURL(audioBlob);
-            audio = new Audio(audioUrl);
-            document.body.appendChild(audio);
-      
-          }
-        });
+          recorder.addEventListener('stop', function() {
+            if (audioChunks.length > 0) {
+              audioBlob = new Blob(audioChunks);
+              audioUrl = URL.createObjectURL(audioBlob);
+              audio = new Audio(audioUrl);
+              document.body.appendChild(audio);
+        
+            }
+          });
+        }else{
+          document.getElementById("recordingProgress").innerText = "Record audio first";
+          document.getElementById("recordingProgress").style.color = "#ff0000";
+        }
+        
       }
   
       function playRecording() {
-			if (audioUrl) {
-				audio = new Audio(audioUrl);
-				audio.play();
-			}
+        if(audioRecorded){
+          document.getElementById("recordingProgress").innerText = "";
+          if (audioUrl) {
+            audio = new Audio(audioUrl);
+            audio.play();
+			    }
+        }else{
+          document.getElementById("recordingProgress").innerText = "Record audio first";
+          document.getElementById("recordingProgress").style.color = "#ff0000";
+        }
 
 
 		}
 
     async function postJSON() {
-      try {
+      if(audioRecorded){
+        document.getElementById("recordingProgress").innerText = "Audio sent";
+        document.getElementById("recordingProgress").style.color = "#18ab29";
+        try {
         const response = await fetch("https://api-inference.huggingface.co/models/jonatasgrosman/wav2vec2-large-xlsr-53-english", {
           method: "POST", // or 'PUT'
           headers: { 'Content-Type': 'audio/webm',
@@ -181,12 +316,17 @@
       } catch (error) {
         console.error("Error:", error);
       }
+      }else{
+        document.getElementById("recordingProgress").innerText = "Record audio first";
+        document.getElementById("recordingProgress").style.color = "#ff0000";
+      }
+
     }
     
     </script>
-    <py-script>
-
-    </py-script>
-    <div id="graph-area"></div>
+    <div id="images">
+      <div id="graph-area"></div>
+      <div id="image-area"></div>
+    </div>
   </body>
 </html>
