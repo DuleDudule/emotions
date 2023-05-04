@@ -118,12 +118,12 @@
       import json
       import io
       import os
-      from dotenv import load_dotenv
+      from dotenv import dotenv_values
       from PIL import Image
       import matplotlib.pyplot as plt
       from request import request  # import our request function.
 
-      
+      #load_dotenv()
       emotions = dict([])
 
       async def display_to_div():
@@ -229,14 +229,29 @@
         if not emotions:
           Element('recordingProgress').element.innerText = "Detect emotions in a prompt first"
         else:
-          load_dotenv()
-
-          API_KEY = os.getenv('gpt_key')
-          print(API_KEY)
+          
+          API_URL = "https://api.openai.com/v1/chat/completions"
+          API_KEY = "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"
           max_value = list(emotions.values())
           max_key= list(emotions.keys())
           emotion = max_key[max_value.index(max(max_value))]
 
+          headers = {"Authorization": f"Bearer {API_KEY}",
+                     "content-type":"application/json"}
+          data = json.dumps({
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": f"Write a detailed prompt for ai image generation software that asks it to generate an image portraying the following emotion : {emotion}. Output only the prompt"}]
+          }
+          )
+          new_post = await request(API_URL, body=data, method="POST", headers=headers)
+          str = json.dumps(await new_post.json())
+          dict = json.loads(str)
+          gpt_response = dict["choices"][0]["message"]["content"]
+          
+          Element('input_field').element.value = gpt_response[1:-1]
+          
+          
+          
     </py-script>
 
 
