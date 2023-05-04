@@ -22,8 +22,18 @@ Proof of concept web aplication running python in the browser using PyScript.
 
 ## API_KEY and ChatGPT prompt generator
 
-For the "generate prompt" button to work, you will need to add your api key to the variable API_KEY in the generatePrompt function:
+To run this project, you will need to add your api key to the variable API_KEY in the generatePrompt function:
 
 `API_KEY = "your api key here"`
 
+
+
+## Usage/Examples
+
+- Type in or record a sentence.
+    - If you recorded a sentence press the "Transcribe audio" button.
+- The "Detect emotions" button plots the emotions detected in the sentence inside the input field.
+- The "Generate prompt" button takes the emotion with the highest score and generates a prompt for image generating AI with chatGPT ("Detect emotions" button needs to be pressed first). 
+- The "Submit prompt" button generates an image based on the sentence inside the input field.
+- The "Submit emotion" button generates an image based on the emotion with the highest score ("Detect emotions" button needs to be pressed first).
 
