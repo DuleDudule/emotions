@@ -19,3 +19,11 @@ Proof of concept web aplication running python in the browser using PyScript.
 ![App Screenshot](https://imgur.com/cekxSUe.jpeg)    
 
 - Inside the app directory in VSCode right-click the index.html file and select : Open with Live Server.
+
+## API_KEY and ChatGPT prompt generator
+
+For the "generate prompt" button to work, you will need to add your api key to the variable API_KEY in the generatePrompt function:
+
+`API_KEY = "your api key here"`
+
+
