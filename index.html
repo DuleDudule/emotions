@@ -231,7 +231,7 @@
         else:
           
           API_URL = "https://api.openai.com/v1/chat/completions"
-          API_KEY = "sk-xxx"  #ADD API KEY HERE
+          API_KEY = "sk-XXX"  #ADD API KEY HERE
           max_value = list(emotions.values())
           max_key= list(emotions.keys())
           emotion = max_key[max_value.index(max(max_value))]
@@ -240,7 +240,7 @@
                      "content-type":"application/json"}
           data = json.dumps({
             "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": f"Write a detailed prompt for ai image generation software that asks it to generate an image portraying the following emotion : {emotion}. Output only the prompt"}]
+            "messages": [{"role": "user", "content": f"Write a detailed prompt for image generating software that generates an image portraying the following emotion : {emotion}. Output only the prompt such that it can be used directly in the software"}]
           }
           )
           new_post = await request(API_URL, body=data, method="POST", headers=headers)
@@ -248,7 +248,7 @@
           dict = json.loads(str)
           gpt_response = dict["choices"][0]["message"]["content"]
           
-          Element('input_field').element.value = gpt_response[1:-1]
+          Element('input_field').element.value = gpt_response
           
           
           
