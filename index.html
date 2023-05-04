@@ -11,7 +11,7 @@
     
     <script defer src="https://pyscript.net/latest/pyscript.js"></script>
     <py-config>
-      packages = [ "matplotlib", "numpy"] 
+      packages = [ "matplotlib", "numpy","python-dotenv"] 
       [[fetch]]
       files = ["/request.py"]
       
@@ -105,8 +105,10 @@
 
     <div id="div1">
       <button py-click="display_to_div()" class ="myButton" type = "submit">Detect emotions</button>
+      <button py-click="generatePrompt()" class ="myButton" type = "submit">Generate prompt</button>
       <button py-click="generateImage()" class ="myButton" type = "submit">Submit prompt</button>
       <button py-click="generateImageEmotion()" class ="myButton" type = "submit">Submit emotion</button>
+      
     </div>
 
     <py-script>
@@ -115,6 +117,8 @@
       import js
       import json
       import io
+      import os
+      from dotenv import load_dotenv
       from PIL import Image
       import matplotlib.pyplot as plt
       from request import request  # import our request function.
@@ -220,7 +224,19 @@
           res = await asyncio.ensure_future(sendRequestEmotion(emotion))
           image = Image.open(io.BytesIO(await res.bytes()))
           display(image, target="image-area", append=False)
-             
+      
+      async def generatePrompt():
+        if not emotions:
+          Element('recordingProgress').element.innerText = "Detect emotions in a prompt first"
+        else:
+          load_dotenv()
+
+          API_KEY = os.getenv('gpt_key')
+          print(API_KEY)
+          max_value = list(emotions.values())
+          max_key= list(emotions.keys())
+          emotion = max_key[max_value.index(max(max_value))]
+
     </py-script>
 
 
